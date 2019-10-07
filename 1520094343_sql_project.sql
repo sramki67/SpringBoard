@@ -131,6 +131,23 @@ GROUP BY Members.memid
 HAVING SUM(Facilities.membercost * Bookings.slots) > 30
 ORDER BY booking_cost DESC
 
+/* New SQL Code */
+
+SELECT CONCAT(mems.surname, ', ', mems.firstname) AS member, facs.name AS facility,
+CASE 
+	WHEN mems.memid =0
+		THEN bks.slots * facs.guestcost
+	ELSE bks.slots * facs.membercost
+	END AS cost
+FROM  `Members` mems
+	JOIN  `Bookings` bks ON mems.memid = bks.memid
+	JOIN  `Facilities` facs ON bks.facid = facs.facid
+	WHERE bks.starttime >=  '2012-09-14' AND bks.starttime <  '2012-09-15' 
+AND ((mems.memid =0 AND bks.slots * facs.guestcost >30)
+	OR (mems.memid !=0 AND bks.slots * facs.membercost >30))
+ORDER BY cost DESC 
+LIMIT 0 , 1000
+
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
@@ -184,6 +201,24 @@ ON Members.memid = sub.memid
 WHERE sub.booking_cost > 30
 ORDER BY 3 DESC
 
+        
+/* Q9 New Code */
+        
+SELECT member, facility, cost
+FROM (
+
+SELECT CONCAT(mems.surname, ', ', mems.firstname) AS member, facs.name AS facility, 
+CASE 
+	WHEN mems.memid =0
+		THEN bks.slots * facs.guestcost
+	ELSE bks.slots * facs.membercost
+	END AS cost
+FROM  `Members` mems
+	JOIN  `Bookings` bks ON mems.memid = bks.memid
+	INNER JOIN  `Facilities` facs ON bks.facid = facs.facid
+	WHERE bks.starttime >=  '2012-09-14' AND bks.starttime < '2012-09-15') AS bookings
+	WHERE cost >30
+ORDER BY cost DESC
 
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
@@ -196,3 +231,19 @@ ON F.facid = B.facid
 GROUP BY F.name
 HAVING Revenue < 1000
 ORDER BY Revenue DESC
+        
+/* Q10 New SQL Code */
+        
+SELECT Facilities.name AS facility,
+
+SUM(CASE 
+	WHEN Bookings.memid = 0 
+		THEN Facilities.guestcost * Bookings.slots 
+	ELSE Facilities.membercost * Bookings.slots 
+	END) AS revenue
+FROM Facilities
+	JOIN Bookings
+		ON Facilities.facid = Bookings.facid
+GROUP BY 1
+HAVING revenue < 1000
+ORDER BY revenue DESC
